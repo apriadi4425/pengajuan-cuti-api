@@ -17,8 +17,6 @@ app.use((req, res, next) => {
     next();
 });
 
-
-
 app.use('/api', router);
 
 app.listen(8005);
