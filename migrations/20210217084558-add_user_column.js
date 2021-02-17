@@ -7,7 +7,7 @@ module.exports = {
           'users', // table name
           'otoritas', // new field name
           {
-            type: Sequelize.INITEGER,
+            type: Sequelize.BIGINT,
             allowNull: true,
           },
       ),
