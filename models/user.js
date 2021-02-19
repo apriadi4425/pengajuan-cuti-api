@@ -58,7 +58,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull : false
     },
     tingkat_pendidikan: DataTypes.STRING,
-    tahun_lulus_pendidikan: DataTypes.DATE,
+    tahun_lulus_pendidikan: DataTypes.STRING,
     tempat_lahir: DataTypes.STRING,
     tanggal_lahir: DataTypes.DATE,
     jenis_kelamin: DataTypes.STRING,

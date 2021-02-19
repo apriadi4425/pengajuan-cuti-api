@@ -2,6 +2,7 @@ const models = require('../models');
 const jwt = require("jsonwebtoken");
 var md5 = require('md5');
 
+
 const accessTokenSecret = process.env.SECRET_KEY;
 
 const CobaLogin = async (req, res) => {
@@ -34,6 +35,8 @@ const CobaLogin = async (req, res) => {
     }
 }
 
+
+
 const CreateUser = async (req, res) => {
     models.User.create({
         username : req.body.username,
@@ -48,17 +51,17 @@ const CreateUser = async (req, res) => {
         tingkat_pendidikan: req.body.tingkat_pendidikan,
         tahun_lulus_pendidikan: req.body.tahun_lulus_pendidikan,
         tempat_lahir: req.body.tempat_lahir,
-        tanggal_lahir: req.body.tanggal_lahir,
+        tanggal_lahir: req.body.tanggal_lahir === '' ? null : req.body.tanggal_lahir,
         jenis_kelamin: req.body.jenis_kelamin,
         agama: req.body.agama,
         status_kawin: req.body.status_kawin,
-        tmt_pns: req.body.tmt_pns,
-        tmt_cpns: req.body.tmt_cpns,
-        tmt_golongan: req.body.tmt_golongan,
-        tanggal_sk_golongan: req.body.tanggal_sk_golongan,
+        tmt_pns: req.body.tmt_pns === '' ? null : req.body.tmt_pns,
+        tmt_cpns: req.body.tmt_cpns === '' ? null : req.body.tmt_cpns,
+        tmt_golongan: req.body.tmt_golongan === '' ? null : req.body.tmt_golongan,
+        tanggal_sk_golongan: req.body.tanggal_sk_golongan === '' ? null : req.body.tanggal_sk_golongan,
         eselon: req.body.eselon,
-        tmt_jabatan: req.body.tmt_jabatan,
-        tanggal_sk_jabatan: req.body.tanggal_sk_jabatan,
+        tmt_jabatan: req.body.tmt_jabatan === '' ? null : req.body.tmt_jabatan,
+        tanggal_sk_jabatan: req.body.tanggal_sk_jabatan === '' ? null : req.body.tanggal_sk_jabatan,
         nomor_sk_jabatan: req.body.nomor_sk_jabatan,
     }).then(() => {
         res.send({
@@ -68,12 +71,12 @@ const CreateUser = async (req, res) => {
             }
         }).status(200)
     }).catch(e => {
-        res.send({
+        res.status(500).send({
             status : 500,
             data : {
                 message : e.errors
             }
-        }).status(500)
+        })
     })
 }
 
