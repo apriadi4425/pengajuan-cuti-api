@@ -11,6 +11,12 @@ module.exports = {
       jatah_cuti_tahunan: {
         type: Sequelize.INTEGER
       },
+      nama_ketua: {
+        type: Sequelize.STRING
+      },
+      nip_ketua: {
+        type: Sequelize.STRING
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

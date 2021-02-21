@@ -77,6 +77,8 @@ const CreateUser = async (req, res) => {
         tmt_jabatan: req.body.tmt_jabatan === '' ? null : req.body.tmt_jabatan,
         tanggal_sk_jabatan: req.body.tanggal_sk_jabatan === '' ? null : req.body.tanggal_sk_jabatan,
         nomor_sk_jabatan: req.body.nomor_sk_jabatan,
+        atasan_langsung : req.body.atasan_langsung,
+        nomor_telpon : req.body.nomor_telpon
     }).then(() => {
         res.send({
             status : 200,

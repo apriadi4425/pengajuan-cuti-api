@@ -76,7 +76,8 @@ module.exports = (sequelize, DataTypes) => {
     tmt_jabatan: DataTypes.DATE,
     tanggal_sk_jabatan: DataTypes.DATE,
     nomor_sk_jabatan: DataTypes.STRING,
-
+    atasan_langsung : DataTypes.INTEGER,
+    nomor_telpon : DataTypes.STRING
   }, {
     sequelize,
     modelName: 'User',
