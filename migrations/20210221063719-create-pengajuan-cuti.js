@@ -35,7 +35,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       alasan_cuti: {
-        type: Sequelize.INTEGER
+        type: Sequelize.TEXT('long')
       },
       status: {
         type: Sequelize.INTEGER

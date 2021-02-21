@@ -15,9 +15,16 @@ module.exports = (sequelize, DataTypes) => {
   };
   PengajuanCuti.init({
     user_id: DataTypes.INTEGER,
+    nama_ketua : DataTypes.STRING,
+    nip_ketua : DataTypes.STRING,
+    atasan_langsung : DataTypes.INTEGER,
+    jenis_cuti : DataTypes.INTEGER,
+    alasan_cuti : DataTypes.STRING,
+    status : DataTypes.INTEGER,
     tanggal_pengajuan: DataTypes.DATE,
     tanggal_awal_cuti: DataTypes.DATE,
-    tanggal_akhir_cuti: DataTypes.DATE
+    tanggal_akhir_cuti: DataTypes.DATE,
+    pertimbangan_atasan_langsung : DataTypes.STRING
   }, {
     sequelize,
     modelName: 'PengajuanCuti',

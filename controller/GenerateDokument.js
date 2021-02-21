@@ -13,8 +13,6 @@ const BuatDokument = async (req, res) => {
     const data = {
         posts: [
             { author: 'Alon Bar2', text: 'Very important\ntext here!' },
-            { author: 'Alon Bar', text: 'Forgot to mention that...' },
-            { author: 'Alon Bar', text: 'Forgot to mention that...' },
         ]
     };
 

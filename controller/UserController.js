@@ -8,7 +8,7 @@ const GetDetail = async (req, res) => {
         where : {
             id : UserPayload.id,
         },
-        attributes: ['otoritas','email','nama','atasan_langsung']
+        attributes: ['id', 'otoritas','email','nama','atasan_langsung']
     }).then(result => {
         res.status(200).send({
             status : 200,
