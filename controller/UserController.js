@@ -1,5 +1,40 @@
 const models = require('../models');
 
+const GetDetail = (req, res) => {
+    const UserPayload = req.user;
+    models.User.findOne({
+        raw : true,
+        where : {
+            id : UserPayload.id
+        },
+        attributes: ['otoritas','email','nama']
+    }).then(result => {
+        res.status(200).send({
+            status : 200,
+            data : result
+        })
+    }).catch(e => {
+        res.status(500).send({
+            status : 500,
+            data : e
+        })
+    })
+}
+
+const GetUserSaya = (req, res) => {
+    models.User.findAll({raw : true, where : {id : req.user.id}}).then(result => {
+        res.status(200).send({
+            status : 200,
+            data : result
+        })
+    }).catch(e => {
+        res.status(500).send({
+            status : 500,
+            data : e
+        })
+    });
+}
+
 const GetAllUser = async (req, res) => {
     models.User.findAll({raw : true}).then(result => {
         res.status(200).send({
@@ -58,7 +93,6 @@ const EditUser = async (req, res) => {
     })
 }
 
-
 const DeleteUser = async (req, res) => {
     models.User.destroy({
         where : {
@@ -77,4 +111,4 @@ const DeleteUser = async (req, res) => {
     });
 }
 
-module.exports = { GetAllUser, DeleteUser, EditUser }
+module.exports = { GetAllUser, DeleteUser, EditUser, GetDetail, GetUserSaya }
