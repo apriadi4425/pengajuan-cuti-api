@@ -1,4 +1,7 @@
 const models = require('../models');
+const moment = require('moment');
+require('moment/locale/id');
+const {LamaCuti} = require('../helper/cutiHelper');
 
 const GetPengajuanCutiSaya = (req, res) => {
     let where = {};
@@ -10,9 +13,20 @@ const GetPengajuanCutiSaya = (req, res) => {
         raw : true,
         where : where
     }).then(result => {
+        let NewData = [];
+        result.forEach(item => {
+            NewData.push({
+                jenis_cuti: item.jenis_cuti,
+                alasan_cuti: item.alasan_cuti,
+                tanggal_pengajuan : moment(item.tanggal_pengajuan).format('dddd, DD MMMM YYYY'),
+                lama_cuti : LamaCuti(item.tanggal_awal_cuti, item.tanggal_akhir_cuti),
+                status : item.status,
+                pertimbangan : item.pertimbangan_atasan_langsung
+            })
+        })
         res.status(200).send({
             status : 200,
-            data : result
+            data : NewData
         })
     }).catch(e => {
         res.status(500).send({
