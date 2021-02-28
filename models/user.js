@@ -76,8 +76,13 @@ module.exports = (sequelize, DataTypes) => {
     tmt_jabatan: DataTypes.DATE,
     tanggal_sk_jabatan: DataTypes.DATE,
     nomor_sk_jabatan: DataTypes.STRING,
-    atasan_langsung : DataTypes.INTEGER,
-    nomor_telpon : DataTypes.STRING
+    atasan_langsung : {
+      type : DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: 'users', key: 'id' }
+    },
+    nomor_telpon : DataTypes.STRING,
+    block : DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'User',

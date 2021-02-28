@@ -1,39 +1,65 @@
 const models = require('../models');
 const moment = require('moment');
-require('moment/locale/id');
-const {LamaCuti} = require('../helper/cutiHelper');
 
-const GetPengajuanCutiSaya = (req, res) => {
+
+const {LamaCuti, LamaCutiHari} = require('../helper/cutiHelper');
+
+
+const getJumlahCuti = async (id) => {
+    const SisaCuti = await models.SaldoCutiPegawai.findAll({
+        raw : true,
+        where: { user_id : id }
+    })
+
+    const TahunIni = moment().format('YYYY');
+    const TahunLalu = TahunIni - 1;
+    const DuaTahunLalu = TahunIni - 2;
+
+    let JumlahCuti = 0;
+    SisaCuti.forEach(item => {
+        if(item.tahun === TahunIni.toString() || item.tahun === TahunLalu.toString() || item.tahun === DuaTahunLalu.toString()){
+            JumlahCuti += item.sisa
+        }
+    })
+    return JumlahCuti;
+}
+
+
+const GetPengajuanCutiSaya = async (req, res) => {
     let where = {};
     if(req.user.otoritas !== 1){
         where = { user_id : req.user.id }
     }
 
-    models.PengajuanCuti.findAll({
-        raw : true,
-        where : where
-    }).then(result => {
-        let NewData = [];
-        result.forEach(item => {
+    const PengajuanCuti = await models.PengajuanCuti.findAll({
+        where : where,
+        include : 'user'
+    })
+
+    let NewData = [];
+        for (const item of PengajuanCuti) {
+            const SisaCuti = await getJumlahCuti(item.user_id);
             NewData.push({
+                id : item.id,
                 jenis_cuti: item.jenis_cuti,
                 alasan_cuti: item.alasan_cuti,
-                tanggal_pengajuan : moment(item.tanggal_pengajuan).format('dddd, DD MMMM YYYY'),
+                tanggal_pengajuan : moment(item.tanggal_pengajuan).format('DD/MM/YYYY'),
                 lama_cuti : LamaCuti(item.tanggal_awal_cuti, item.tanggal_akhir_cuti),
+                lama_cuti_hari : LamaCutiHari(item.tanggal_awal_cuti, item.tanggal_akhir_cuti),
                 status : item.status,
-                pertimbangan : item.pertimbangan_atasan_langsung
+                pertimbangan : item.pertimbangan_atasan_langsung,
+                nama : item.user.nama,
+                sisa_cuti : SisaCuti
             })
-        })
-        res.status(200).send({
-            status : 200,
-            data : NewData
-        })
-    }).catch(e => {
-        res.status(500).send({
-            status : 500,
-            data : e
-        })
+         }
+    const JumlahCuti = await getJumlahCuti(req.user.id);
+
+    res.status(200).send({
+        status : 200,
+        data : NewData,
+        sisa_cuti : JumlahCuti
     })
+
 }
 
 const TambahDataPengajuan = (req, res) => {
@@ -61,5 +87,71 @@ const TambahDataPengajuan = (req, res) => {
     })
 }
 
+const KurangiSisaCuti = async (id) => {
+    const DataCuti = await models.PengajuanCuti.findOne({raw : true, where : { id : id}});
+    const LamaCuti = LamaCutiHari(DataCuti.tanggal_awal_cuti, DataCuti.tanggal_akhir_cuti);
 
-module.exports = { GetPengajuanCutiSaya, TambahDataPengajuan }
+    const TahunIni = moment().format('YYYY');
+    const TahunLalu = TahunIni - 1;
+    const DuaTahunLalu = TahunIni - 2;
+
+    const SisaCuti = await models.SaldoCutiPegawai.findAll({raw : true, where : {user_id : DataCuti.user_id}});
+    let DataObjectCuti = {}
+    SisaCuti.forEach(item => {
+        if(item.tahun === TahunIni.toString() || item.tahun === TahunLalu.toString() || item.tahun === DuaTahunLalu.toString()){
+            DataObjectCuti[item.tahun] = item.sisa
+        }
+    })
+
+    if(DataObjectCuti[DuaTahunLalu] >= LamaCuti){
+        await models.SaldoCutiPegawai.update({
+            sisa : (DataObjectCuti[DuaTahunLalu] - LamaCuti)
+        }, {
+            where : { tahun : DuaTahunLalu, user_id : DataCuti.user_id }
+        })
+    }else if(DataObjectCuti[DuaTahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu]) >= LamaCuti){
+        const GabunganCutiDuaTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu] - LamaCuti);
+        await models.SaldoCutiPegawai.update({sisa : 0}, {where : { tahun : DuaTahunLalu, user_id : DataCuti.user_id }})
+        await models.SaldoCutiPegawai.update({sisa : GabunganCutiDuaTahunLaludanTahunIni}, {where : { tahun : TahunLalu, user_id : DataCuti.user_id }})
+    }else if(DataObjectCuti[TahunLalu] >= LamaCuti){
+        await models.SaldoCutiPegawai.update({
+            sisa : (DataObjectCuti[TahunLalu] - LamaCuti)
+        }, {
+            where : { tahun : TahunLalu, user_id : DataCuti.user_id }
+        })
+    }else if(DataObjectCuti[TahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni]) >= LamaCuti){
+        const GabunganCutiTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni] - LamaCuti);
+        await models.SaldoCutiPegawai.update({sisa : 0}, {where : { tahun : TahunLalu, user_id : DataCuti.user_id }})
+        await models.SaldoCutiPegawai.update({sisa : GabunganCutiTahunLaludanTahunIni}, {where : { tahun : TahunIni, user_id : DataCuti.user_id }})
+    }else if(DataObjectCuti[TahunIni] >= LamaCuti){
+        await models.SaldoCutiPegawai.update({
+            sisa : (DataObjectCuti[TahunIni] - LamaCuti)
+        }, {
+            where : { tahun : TahunIni, user_id : DataCuti.user_id }
+        })
+    }
+}
+
+const SetujuiPengajuanCuti = (req, res) => {
+    const {status, pertimbangan_atasan_langsung, id} = req.body;
+    models.PengajuanCuti.update({
+        status : status,
+        pertimbangan_atasan_langsung : pertimbangan_atasan_langsung
+    },{
+        where : {
+            id : id
+        }
+    }).then(result => {
+        if(status === 2){
+            KurangiSisaCuti(id)
+        }
+    }).catch(e => {
+        res.status(500).send({
+            status : 500,
+            data : e
+        })
+    })
+}
+
+
+module.exports = { GetPengajuanCutiSaya, TambahDataPengajuan, SetujuiPengajuanCuti }

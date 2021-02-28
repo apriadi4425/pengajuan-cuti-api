@@ -11,13 +11,20 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      PengajuanCuti.belongsTo(models.User, {as : 'user', foreignKey : 'user_id'});
+      PengajuanCuti.belongsTo(models.User, {as : 'atasan', foreignKey : 'atasan_langsung'});
     }
   };
   PengajuanCuti.init({
-    user_id: DataTypes.INTEGER,
+    user_id: {
+      type : DataTypes.INTEGER,
+      references: { model: 'users', key: 'id' }
+    },
     nama_ketua : DataTypes.STRING,
     nip_ketua : DataTypes.STRING,
-    atasan_langsung : DataTypes.INTEGER,
+    atasan_langsung : {
+      type : DataTypes.INTEGER,
+    },
     jenis_cuti : DataTypes.INTEGER,
     alasan_cuti : DataTypes.STRING,
     status : DataTypes.INTEGER,

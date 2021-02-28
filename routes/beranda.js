@@ -3,6 +3,6 @@ const router = express.Router();
 
 const BerandaController = require('../controller/BerandaController');
 
-router.get('/', BerandaController.PegawaiSedangCuti);
+router.get('/sedang-cuti', BerandaController.PegawaiSedangCuti);
 
 module.exports = router;

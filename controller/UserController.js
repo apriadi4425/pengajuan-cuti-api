@@ -96,6 +96,34 @@ const EditUser = async (req, res) => {
     })
 }
 
+const BlockUser = async(req, res) => {
+    const {action, id} = req.body;
+    let block;
+    if(action === 'block'){
+        block = 2;
+    }else{
+        block = 1;
+    }
+
+    models.User.update({
+        block : block
+    }, {
+        where : {
+            id : id
+        }
+    }).then(result => {
+        res.status(200).send({
+            status : 200,
+            data : 'Berhasil'
+        })
+    }).catch(e => {
+        res.status(500).send({
+            status : 500,
+            data : e
+        })
+    });
+}
+
 const DeleteUser = async (req, res) => {
     models.User.destroy({
         where : {
@@ -114,4 +142,4 @@ const DeleteUser = async (req, res) => {
     });
 }
 
-module.exports = { GetAllUser, DeleteUser, EditUser, GetDetail, GetUserSaya }
+module.exports = { GetAllUser, BlockUser, DeleteUser, EditUser, GetDetail, GetUserSaya }

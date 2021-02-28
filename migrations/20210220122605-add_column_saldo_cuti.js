@@ -10,12 +10,20 @@ module.exports = {
             type: Sequelize.BIGINT,
           },
       ),
+      queryInterface.addColumn(
+          'users', // table name
+          'block', // new field name
+          {
+            type: Sequelize.BIGINT,
+          },
+      ),
     ]);
   },
 
   down: async (queryInterface, Sequelize) => {
     return Promise.all([
       queryInterface.removeColumn('users', 'saldo_cuti'),
+      queryInterface.removeColumn('users', 'block'),
     ]);
   }
 };
