@@ -87,65 +87,97 @@ const TambahDataPengajuan = (req, res) => {
     })
 }
 
-const KurangiSisaCuti = async (id) => {
-    const DataCuti = await models.PengajuanCuti.findOne({raw : true, where : { id : id}});
-    const LamaCuti = LamaCutiHari(DataCuti.tanggal_awal_cuti, DataCuti.tanggal_akhir_cuti);
+const KurangiSisaCuti = (id) => {
+    return new Promise(async (resolve) => {
+        const DataCuti = await models.PengajuanCuti.findOne({raw : true, where : { id : id}});
+        const LamaCuti = LamaCutiHari(DataCuti.tanggal_awal_cuti, DataCuti.tanggal_akhir_cuti);
 
+        const TahunIni = moment().format('YYYY');
+        const TahunLalu = TahunIni - 1;
+        const DuaTahunLalu = TahunIni - 2;
+
+        const SisaCuti = await models.SaldoCutiPegawai.findAll({raw : true, where : {user_id : DataCuti.user_id}});
+        let DataObjectCuti = {}
+        SisaCuti.forEach(item => {
+            if(item.tahun === TahunIni.toString() || item.tahun === TahunLalu.toString() || item.tahun === DuaTahunLalu.toString()){
+                DataObjectCuti[item.tahun] = item.sisa
+            }
+        })
+
+        if(DataObjectCuti[DuaTahunLalu] >= LamaCuti){
+            DataObjectCuti[DuaTahunLalu] = LamaCuti;
+            await models.SaldoCutiPegawai.update({
+                sisa : (DataObjectCuti[DuaTahunLalu] - LamaCuti)
+            }, {
+                where : { tahun : DuaTahunLalu, user_id : DataCuti.user_id }
+            })
+        }else if(DataObjectCuti[DuaTahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu]) >= LamaCuti){
+            const GabunganCutiDuaTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu] - LamaCuti);
+            DataObjectCuti[DuaTahunLalu] = DataObjectCuti[DuaTahunLalu];
+            DataObjectCuti[TahunLalu] = DataObjectCuti[TahunLalu] - GabunganCutiDuaTahunLaludanTahunIni;
+            DataObjectCuti[TahunIni] = 0;
+            await models.SaldoCutiPegawai.update({sisa : 0}, {where : { tahun : DuaTahunLalu, user_id : DataCuti.user_id }})
+            await models.SaldoCutiPegawai.update({sisa : GabunganCutiDuaTahunLaludanTahunIni}, {where : { tahun : TahunLalu, user_id : DataCuti.user_id }})
+        }else if(DataObjectCuti[TahunLalu] >= LamaCuti){
+            DataObjectCuti[DuaTahunLalu] = 0;
+            DataObjectCuti[TahunLalu] = LamaCuti;
+            DataObjectCuti[TahunIni] = 0;
+            await models.SaldoCutiPegawai.update({
+                sisa : (DataObjectCuti[TahunLalu] - LamaCuti)
+            }, {
+                where : { tahun : TahunLalu, user_id : DataCuti.user_id }
+            })
+        }else if(DataObjectCuti[TahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni]) >= LamaCuti){
+            const GabunganCutiTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni] - LamaCuti);
+            DataObjectCuti[DuaTahunLalu] = 0;
+            DataObjectCuti[TahunLalu] = DataObjectCuti[TahunLalu];
+            DataObjectCuti[TahunIni] = DataObjectCuti[TahunIni] - GabunganCutiTahunLaludanTahunIni;
+            await models.SaldoCutiPegawai.update({sisa : 0}, {where : { tahun : TahunLalu, user_id : DataCuti.user_id }})
+            await models.SaldoCutiPegawai.update({sisa : GabunganCutiTahunLaludanTahunIni}, {where : { tahun : TahunIni, user_id : DataCuti.user_id }})
+        }else if(DataObjectCuti[TahunIni] >= LamaCuti){
+            DataObjectCuti[DuaTahunLalu] = 0;
+            DataObjectCuti[TahunLalu] = 0;
+            DataObjectCuti[TahunIni] = LamaCuti;
+            await models.SaldoCutiPegawai.update({
+                sisa : (DataObjectCuti[TahunIni] - LamaCuti)
+            }, {
+                where : { tahun : TahunIni, user_id : DataCuti.user_id }
+            })
+        }
+
+        resolve(DataObjectCuti)
+    })
+}
+
+const SetujuiPengajuanCuti = async (req, res) => {
     const TahunIni = moment().format('YYYY');
     const TahunLalu = TahunIni - 1;
     const DuaTahunLalu = TahunIni - 2;
-
-    const SisaCuti = await models.SaldoCutiPegawai.findAll({raw : true, where : {user_id : DataCuti.user_id}});
-    let DataObjectCuti = {}
-    SisaCuti.forEach(item => {
-        if(item.tahun === TahunIni.toString() || item.tahun === TahunLalu.toString() || item.tahun === DuaTahunLalu.toString()){
-            DataObjectCuti[item.tahun] = item.sisa
-        }
-    })
-
-    if(DataObjectCuti[DuaTahunLalu] >= LamaCuti){
-        await models.SaldoCutiPegawai.update({
-            sisa : (DataObjectCuti[DuaTahunLalu] - LamaCuti)
-        }, {
-            where : { tahun : DuaTahunLalu, user_id : DataCuti.user_id }
-        })
-    }else if(DataObjectCuti[DuaTahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu]) >= LamaCuti){
-        const GabunganCutiDuaTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu] - LamaCuti);
-        await models.SaldoCutiPegawai.update({sisa : 0}, {where : { tahun : DuaTahunLalu, user_id : DataCuti.user_id }})
-        await models.SaldoCutiPegawai.update({sisa : GabunganCutiDuaTahunLaludanTahunIni}, {where : { tahun : TahunLalu, user_id : DataCuti.user_id }})
-    }else if(DataObjectCuti[TahunLalu] >= LamaCuti){
-        await models.SaldoCutiPegawai.update({
-            sisa : (DataObjectCuti[TahunLalu] - LamaCuti)
-        }, {
-            where : { tahun : TahunLalu, user_id : DataCuti.user_id }
-        })
-    }else if(DataObjectCuti[TahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni]) >= LamaCuti){
-        const GabunganCutiTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni] - LamaCuti);
-        await models.SaldoCutiPegawai.update({sisa : 0}, {where : { tahun : TahunLalu, user_id : DataCuti.user_id }})
-        await models.SaldoCutiPegawai.update({sisa : GabunganCutiTahunLaludanTahunIni}, {where : { tahun : TahunIni, user_id : DataCuti.user_id }})
-    }else if(DataObjectCuti[TahunIni] >= LamaCuti){
-        await models.SaldoCutiPegawai.update({
-            sisa : (DataObjectCuti[TahunIni] - LamaCuti)
-        }, {
-            where : { tahun : TahunIni, user_id : DataCuti.user_id }
-        })
-    }
-}
-
-const SetujuiPengajuanCuti = (req, res) => {
     const {status, pertimbangan_atasan_langsung, id} = req.body;
+    let DataPengambilanCuti = {
+        [TahunIni] : 0, [TahunLalu] : 0, [DuaTahunLalu] : 0
+    }
+    if(status === 2){
+        DataPengambilanCuti = await KurangiSisaCuti(id);
+    }
+
     models.PengajuanCuti.update({
         status : status,
-        pertimbangan_atasan_langsung : pertimbangan_atasan_langsung
+        pertimbangan_atasan_langsung : pertimbangan_atasan_langsung,
+        n : DataPengambilanCuti[TahunIni],
+        n1 : DataPengambilanCuti[TahunLalu],
+        n2 : DataPengambilanCuti[DuaTahunLalu],
     },{
         where : {
             id : id
         }
-    }).then(result => {
-        if(status === 2){
-            KurangiSisaCuti(id)
-        }
+    }).then(async result => {
+        res.status(200).send({
+            status : 200,
+            data : 'sukses'
+        })
     }).catch(e => {
+        console.log(e)
         res.status(500).send({
             status : 500,
             data : e

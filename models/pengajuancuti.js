@@ -31,7 +31,10 @@ module.exports = (sequelize, DataTypes) => {
     tanggal_pengajuan: DataTypes.DATE,
     tanggal_awal_cuti: DataTypes.DATE,
     tanggal_akhir_cuti: DataTypes.DATE,
-    pertimbangan_atasan_langsung : DataTypes.STRING
+    pertimbangan_atasan_langsung : DataTypes.STRING,
+    n : DataTypes.INTEGER,
+    n1 : DataTypes.INTEGER,
+    n2 : DataTypes.INTEGER,
   }, {
     sequelize,
     modelName: 'PengajuanCuti',

@@ -1,4 +1,5 @@
 const models = require('../models');
+const moment = require('moment');
 
 const GetDetail = async (req, res) => {
     const UserPayload = req.user;
@@ -38,7 +39,7 @@ const GetUserSaya = (req, res) => {
 }
 
 const GetAllUser = async (req, res) => {
-    models.User.findAll({raw : true}).then(result => {
+    models.User.findAll({include : 'saldo_cuti'}).then(result => {
         res.status(200).send({
             status : 200,
             data : result
@@ -96,6 +97,25 @@ const EditUser = async (req, res) => {
     })
 }
 
+const SetSaldoCuti = async (req, res) => {
+    const TahunIni = moment().format('YYYY');
+    const TahunLalu = TahunIni - 1;
+    const DuaTahunLalu = TahunIni - 2;
+
+
+    await models.SaldoCutiPegawai.update({sisa : req.body[TahunIni]}, { where : { tahun : '2021', user_id : req.body.id_user }})
+        .then(() => console.log('sukses')).catch(e => console.log(e))
+    await models.SaldoCutiPegawai.update({sisa : req.body[TahunLalu]}, { where : { tahun : TahunLalu, user_id : req.body.id_user }})
+        .then(() => console.log('sukses')).catch(e => console.log(e))
+    await models.SaldoCutiPegawai.update({sisa : req.body[DuaTahunLalu]}, { where : { tahun : DuaTahunLalu, user_id : req.body.id_user }})
+        .then(() => console.log('sukses')).catch(e => console.log(e))
+
+    res.send({
+        status : 200,
+        data : 'Berhasil'
+    })
+}
+
 const BlockUser = async(req, res) => {
     const {action, id} = req.body;
     let block;
@@ -142,4 +162,4 @@ const DeleteUser = async (req, res) => {
     });
 }
 
-module.exports = { GetAllUser, BlockUser, DeleteUser, EditUser, GetDetail, GetUserSaya }
+module.exports = { GetAllUser, BlockUser, DeleteUser, EditUser, GetDetail, GetUserSaya, SetSaldoCuti }

@@ -2,7 +2,7 @@ const models = require('../models')
 const fs = require('fs');
 const { TemplateHandler } = require('easy-template-x');
 const moment = require('moment');
-const { MasaKerja, JenisCuti, LamaCutiDetil, LamaCutiDetilDua } = require('../helper/cutiHelper')
+const { MasaKerja, JenisCuti, LamaCutiDetil, LamaCutiDetilDua, LamaCutiHari } = require('../helper/cutiHelper')
 
 const getDataCuti = async (IdPengajuan) => {
     return new Promise((resolve, reject) => {
@@ -28,6 +28,47 @@ const BuatDokument = async (req, res) => {
     const templateFile = fs.readFileSync('template/pengajuan_cuti.docx');
 
 
+    const LamaCuti = LamaCutiHari(DataValues.tanggal_awal_cuti, DataValues.tanggal_akhir_cuti);
+    const TahunIni = moment().format('YYYY');
+    const TahunLalu = TahunIni - 1;
+    const DuaTahunLalu = TahunIni - 2;
+
+    const SisaCuti = await models.SaldoCutiPegawai.findAll({raw : true, where : {user_id : DataValues.user.id}});
+    let DataObjectCutiSebelum = {}
+    let DataObjectCuti = {}
+    SisaCuti.forEach(item => {
+        if(item.tahun === TahunIni.toString() || item.tahun === TahunLalu.toString() || item.tahun === DuaTahunLalu.toString()){
+            DataObjectCutiSebelum[item.tahun] = item.sisa
+            DataObjectCuti[item.tahun] = item.sisa
+        }
+    })
+
+
+
+    if(DataValues.status !== 2){
+        if(DataObjectCuti[DuaTahunLalu] >= LamaCuti){
+            DataObjectCuti[DuaTahunLalu] = DataObjectCuti[DuaTahunLalu] - LamaCuti;
+        }else if(DataObjectCuti[DuaTahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu]) >= LamaCuti){
+            const GabunganCutiDuaTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[DuaTahunLalu] - LamaCuti);
+            DataObjectCuti[DuaTahunLalu] = 0;
+            DataObjectCuti[TahunLalu] = GabunganCutiDuaTahunLaludanTahunIni;
+        }else if(DataObjectCuti[TahunLalu] >= LamaCuti){
+            DataObjectCuti[TahunLalu] = DataObjectCuti[TahunLalu] - LamaCuti;
+        }else if(DataObjectCuti[TahunLalu] !== 0 && (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni]) >= LamaCuti){
+            const GabunganCutiTahunLaludanTahunIni = (DataObjectCuti[TahunLalu] + DataObjectCuti[TahunIni] - LamaCuti);
+            DataObjectCuti[TahunLalu] = 0;
+            DataObjectCuti[TahunIni] = GabunganCutiTahunLaludanTahunIni;
+        }else if(DataObjectCuti[TahunIni] >= LamaCuti){
+            DataObjectCuti[TahunIni] = DataObjectCuti[TahunIni] - LamaCuti;
+        }
+    }else{
+        DataObjectCutiSebelum[DuaTahunLalu] = DataObjectCutiSebelum[DuaTahunLalu] + DataValues.n2;
+        DataObjectCutiSebelum[TahunLalu] = DataObjectCutiSebelum[TahunLalu] + DataValues.n1;
+        DataObjectCutiSebelum[TahunIni] = DataObjectCutiSebelum[TahunIni] + DataValues.n;
+    }
+
+
+
 
 // 2. process the template
     const dataBefore = {
@@ -47,7 +88,13 @@ const BuatDokument = async (req, res) => {
         jabatan_atasan_langsung : DataValues.atasan.jabatan,
         nip_atasan_langsung : DataValues.atasan.nip,
         nama_ketua : DataValues.nama_ketua.toUpperCase(),
-        nip_ketua : DataValues.nip_ketua
+        nip_ketua : DataValues.nip_ketua,
+        n1_sbl : DataObjectCutiSebelum[TahunIni],
+        n2_sbl : DataObjectCutiSebelum[TahunLalu],
+        n3_sbl : DataObjectCutiSebelum[DuaTahunLalu],
+        n1_ssd : DataObjectCuti[TahunIni],
+        n2_ssd : DataObjectCuti[TahunLalu],
+        n3_ssd : DataObjectCuti[DuaTahunLalu],
     };
 
     const data = Object.assign(dataBefore, logic)
