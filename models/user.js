@@ -70,6 +70,7 @@ module.exports = (sequelize, DataTypes) => {
     status_kawin: DataTypes.STRING,
     tmt_pns: DataTypes.DATE,
     tmt_cpns: DataTypes.DATE,
+    golongan: DataTypes.STRING,
     tmt_golongan: DataTypes.DATE,
     tanggal_sk_golongan: DataTypes.DATE,
     eselon: DataTypes.STRING,

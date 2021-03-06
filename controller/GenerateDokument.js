@@ -3,6 +3,7 @@ const fs = require('fs');
 const { TemplateHandler } = require('easy-template-x');
 const moment = require('moment');
 const { MasaKerja, JenisCuti, LamaCutiDetil, LamaCutiDetilDua, LamaCutiHari } = require('../helper/cutiHelper')
+const { AngkaToRomawi } = require('../helper/tanggalHelper')
 
 const getDataCuti = async (IdPengajuan) => {
     return new Promise((resolve, reject) => {
@@ -68,8 +69,6 @@ const BuatDokument = async (req, res) => {
     }
 
 
-
-
 // 2. process the template
     const dataBefore = {
         tanggal_pengajuan : moment(DataValues.tanggal_pengajuan).format('DD MMMM YYYY'),
@@ -83,6 +82,7 @@ const BuatDokument = async (req, res) => {
         lama_cuti : LamaCutiDetil(DataValues.tanggal_awal_cuti, DataValues.tanggal_akhir_cuti),
         lama_cuti_huruf :  LamaCutiDetilDua(DataValues.tanggal_awal_cuti, DataValues.tanggal_akhir_cuti),
         awal_cuti : moment(DataValues.tanggal_awal_cuti).format('DD MMMM YYYY'),
+        tanggal_surat : `${AngkaToRomawi(moment(DataValues.tanggal_pengajuan).format('MM'))}/${moment(DataValues.tanggal_pengajuan).format('YYYY')}`,
         akhir_cuti : moment(DataValues.tanggal_akhir_cuti).format('DD MMMM YYYY'),
         nama_atasan_langsung: DataValues.atasan.nama.toUpperCase(),
         jabatan_atasan_langsung : DataValues.atasan.jabatan,

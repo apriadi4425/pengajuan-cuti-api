@@ -3,6 +3,34 @@ const {Op} = require('sequelize');
 const moment = require('moment');
 const {LamaCuti} = require('../helper/cutiHelper')
 
+
+const InfoBox = async (req, res) => {
+    const SedangCuti = await models.PengajuanCuti.count({
+        where : {
+            status : 2,
+            tanggal_awal_cuti : {
+                [Op.lte] : new Date()
+            },
+            tanggal_akhir_cuti : {
+                [Op.gte] : new Date()
+            }
+        }
+    })
+    const TotalPengajuan = await models.PengajuanCuti.count()
+    const TotalPengajuanBelumAcc = await models.PengajuanCuti.count({where : {status : 1}})
+    const TotalPegawai = await models.User.count();
+
+    res.send({
+        status : 200,
+        data : {
+            sedang_cuti : SedangCuti,
+            total_pengajuan : TotalPengajuan,
+            pengajuan_pending : TotalPengajuanBelumAcc,
+            total_pegawai : TotalPegawai
+        }
+    })
+}
+
 const PegawaiSedangCuti = (req, res) => {
     models.PengajuanCuti.findAll({
         where : {
@@ -41,4 +69,4 @@ const PegawaiSedangCuti = (req, res) => {
 }
 
 
-module.exports = { PegawaiSedangCuti }
+module.exports = { PegawaiSedangCuti, InfoBox }
