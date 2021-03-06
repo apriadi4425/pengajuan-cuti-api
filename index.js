@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors')
 const dotenv = require("dotenv");
 dotenv.config();
+require('moment/locale/id');
 const app = express();
 
 const router = require('./routes/index');

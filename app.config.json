@@ -1,0 +1,10 @@
+{
+  apps : [
+    {
+      name      : "cuti-api",
+      script    : "npm start",
+      interpreter: "none",
+      args: "serve -p 8410 -T"
+    }
+  ]
+}

@@ -1,22 +1,36 @@
 const models = require('../models');
+const moment = require('moment');
 const jwt = require("jsonwebtoken");
 var md5 = require('md5');
 
-
 const accessTokenSecret = process.env.SECRET_KEY;
 
-const CobaLogin = async (req, res) => {
 
-    const User = await models.User.findOne({
-        where : {
+const validateEmail = (email) => {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+}
+
+const CobaLogin = async (req, res) => {
+    let where = {};
+    if(validateEmail(req.body.username)){
+        where = {
+            email : req.body.username,
+            password : md5(req.body.password)
+        }
+    }else{
+        where = {
             username : req.body.username,
             password : md5(req.body.password)
         }
+    }
+    const User = await models.User.findOne({
+        where : where
     })
 
     if(User !== null){
         const DataUser = User.dataValues;
-        const accessToken = jwt.sign({ username: DataUser.username,  otoritas: DataUser.otoritas }, accessTokenSecret);
+        const accessToken = jwt.sign({ username: DataUser.username,  otoritas: DataUser.otoritas, id : DataUser.id }, accessTokenSecret);
         res.status(200).send({
             status : 200,
             data : {
@@ -25,6 +39,7 @@ const CobaLogin = async (req, res) => {
                 token : accessToken
             }
         })
+
     }else{
         res.status(401).send({
             status : 401,
@@ -37,7 +52,10 @@ const CobaLogin = async (req, res) => {
 
 
 
+
+
 const CreateUser = async (req, res) => {
+
     models.User.create({
         username : req.body.username,
         password : md5(req.body.password),
@@ -63,7 +81,11 @@ const CreateUser = async (req, res) => {
         tmt_jabatan: req.body.tmt_jabatan === '' ? null : req.body.tmt_jabatan,
         tanggal_sk_jabatan: req.body.tanggal_sk_jabatan === '' ? null : req.body.tanggal_sk_jabatan,
         nomor_sk_jabatan: req.body.nomor_sk_jabatan,
-    }).then(() => {
+        atasan_langsung : req.body.atasan_langsung || null,
+        nomor_telpon : req.body.nomor_telpon,
+        block : 1
+    }).then(async result => {
+        await DaftarkanSaldoAwalCuti(result.dataValues.id)
         res.send({
             status : 200,
             data : {
@@ -78,6 +100,26 @@ const CreateUser = async (req, res) => {
             }
         })
     })
+}
+
+const DaftarkanSaldoAwalCuti = (id) => {
+    const TahunIni = moment().format('YYYY');
+    const TahunLalu = TahunIni - 1;
+    const DuaTahunLalu = TahunIni - 2;
+
+    models.SaldoCutiPegawai.bulkCreate([
+        {
+            user_id : id, tahun : TahunIni, sisa : 12
+        },
+        {
+            user_id : id, tahun : TahunLalu, sisa : 6
+        },
+        {
+            user_id : id, tahun : DuaTahunLalu, sisa : 6
+        },
+    ])
+
+    return true
 }
 
 module.exports = { CobaLogin, CreateUser }
