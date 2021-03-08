@@ -1,5 +1,6 @@
 const models = require('../models');
 const moment = require('moment');
+const {Op} = require('sequelize');
 
 
 const {LamaCuti, LamaCutiHari} = require('../helper/cutiHelper');
@@ -27,9 +28,27 @@ const getJumlahCuti = async (id) => {
 
 const GetPengajuanCutiSaya = async (req, res) => {
     let where = {};
-    if(req.user.otoritas !== 1){
-        where = { user_id : req.user.id }
+
+    if(req.query.action === 'pengajuan'){
+        if(req.user.otoritas !== 1){
+            where = { 
+                user_id : req.user.id,
+                status : { $not : 2 }
+            }
+        }else{
+            where = { 
+                status : { $not : 2 }
+            }
+        }
+    }else{
+        if(req.user.otoritas !== 1){
+            where = { 
+                user_id : req.user.id,
+            }
+        }
     }
+    
+
 
     const PengajuanCuti = await models.PengajuanCuti.findAll({
         where : where,
@@ -62,29 +81,79 @@ const GetPengajuanCutiSaya = async (req, res) => {
 
 }
 
-const TambahDataPengajuan = (req, res) => {
-    models.PengajuanCuti.create({
-        user_id : req.user.id,
-        atasan_langsung : req.body.atasan_langsung,
-        nama_ketua : req.body.nama_ketua,
-        nip_ketua : req.body._nip_ketua,
-        tanggal_pengajuan : req.body.tanggal_pengajuan,
-        tanggal_awal_cuti : req.body.tanggal_awal_cuti,
-        tanggal_akhir_cuti : req.body.tanggal_akhir_cuti,
-        jenis_cuti : req.body.jenis_cuti,
-        alasan_cuti : req.body.alasan_cuti,
-        status : 1
-    }).then(result => {
-        res.status(200).send({
-            status : 200,
-            data : 'sukses'
-        })
-    }).catch(e => {
-        res.status(500).send({
-            status : 500,
-            data : e
-        })
+const TambahDataPengajuan = async (req, res) => {
+    const CekApakahAdaPengajuan = await models.PengajuanCuti.count({
+        where : {
+            user_id : req.user.id,
+            status : 2,
+            tanggal_awal_cuti : {
+                [Op.lte] : new Date()
+            },
+            tanggal_akhir_cuti : {
+                [Op.gte] : new Date()
+            }
+        }
     })
+
+    const CekApakahAdaPengajuanYangBelumAcc = await models.PengajuanCuti.count({
+        where : {
+            user_id : req.user.id,
+            status : 1
+        }
+    })
+
+    const CekApakahAdaPengajuanAccNamunBelumSampaiCuti = await models.PengajuanCuti.count({
+        where : {
+            user_id : req.user.id,
+            status : 2,
+            tanggal_awal_cuti : {
+                [Op.gte] : new Date()
+            },
+        }
+    })
+
+
+    if(CekApakahAdaPengajuanYangBelumAcc > 0){
+        res.status(502).send({
+            status : 502,
+            data : 'error'
+        })
+    }else if( CekApakahAdaPengajuan > 0){
+        res.status(501).send({
+            status : 501,
+            data : 'error'
+        })
+    }else if(CekApakahAdaPengajuanAccNamunBelumSampaiCuti > 0){
+        res.status(503).send({
+            status : 503,
+            data : 'error'
+        })
+    }
+    
+    else{
+        models.PengajuanCuti.create({
+            user_id : req.user.id,
+            atasan_langsung : req.body.atasan_langsung,
+            nama_ketua : req.body.nama_ketua,
+            nip_ketua : req.body._nip_ketua,
+            tanggal_pengajuan : req.body.tanggal_pengajuan,
+            tanggal_awal_cuti : req.body.tanggal_awal_cuti,
+            tanggal_akhir_cuti : req.body.tanggal_akhir_cuti,
+            jenis_cuti : req.body.jenis_cuti,
+            alasan_cuti : req.body.alasan_cuti,
+            status : 1
+        }).then(result => {
+            res.status(200).send({
+                status : 200,
+                data : 'sukses'
+            })
+        }).catch(e => {
+            res.status(500).send({
+                status : 500,
+                data : e
+            })
+        })
+    }
 }
 
 const KurangiSisaCuti = (id) => {

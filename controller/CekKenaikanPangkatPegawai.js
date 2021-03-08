@@ -5,6 +5,8 @@ const getKenaikanBulanIni = async (req, res) => {
 
     const GetAllUser = await models.User.findAll({raw : true});
     const TahunIni = moment().format('YYYY');
+    const TahunLalu = TahunIni - 1;
+
     let NewArray = [];
     GetAllUser.forEach(item => {
         let FaktorTahun = [];
@@ -50,7 +52,7 @@ const getKenaikanBulanIni = async (req, res) => {
         })
 
         item.tanggal.forEach(item4 => {
-            if(moment(item4) > moment(`${TahunIni}-01-01`) && moment(item4) < moment(`${TahunIni}-04-01`)){
+            if(moment(item4) > moment(`${TahunLalu}-08-01`) && moment(item4) < moment(`${TahunIni}-04-01`)){
                 TanggalPeriode1.push({
                     user : item.user,
                     tanggal : item4
