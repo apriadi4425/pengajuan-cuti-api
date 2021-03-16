@@ -1,6 +1,7 @@
 const models = require('../models');
 const moment = require('moment');
 const jwt = require("jsonwebtoken");
+
 var md5 = require('md5');
 
 const accessTokenSecret = process.env.SECRET_KEY;
@@ -51,6 +52,25 @@ const CobaLogin = async (req, res) => {
 }
 
 
+const UbahTokenNotif = (req, res) => {
+    const Token = req.body.token
+    models.Konfig.update({ token_notif : Token }, {where : {id : 1}})
+        .then(result => {
+            res.send({
+                status : 200,
+                data : {
+                    message : 'berhasil diubah'
+                }
+            })
+        }).catch(e => {
+            res.status(500).send({
+                status : 500,
+                data : {
+                    message : e.errors
+                }
+            })
+    })
+}
 
 
 
@@ -122,4 +142,4 @@ const DaftarkanSaldoAwalCuti = (id) => {
     return true
 }
 
-module.exports = { CobaLogin, CreateUser }
+module.exports = { CobaLogin, CreateUser, UbahTokenNotif }

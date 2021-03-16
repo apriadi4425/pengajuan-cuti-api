@@ -11,8 +11,8 @@ const router = require('./routes/index');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(cors())
+app.use(cors({credentials: true}))
 
 app.use('/api', router);
 
-app.listen(8005);
+app.listen(8006);
