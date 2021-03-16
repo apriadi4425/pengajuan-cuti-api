@@ -31,27 +31,30 @@ const GetPengajuanCutiSaya = async (req, res) => {
 
     if(req.query.action === 'pengajuan'){
         if(req.user.otoritas !== 1){
-            where = { 
+            where = {
                 user_id : req.user.id,
-                status : { $not : 2 }
+                status : { [Op.not] : 2 }
             }
         }else{
-            where = { 
-                status : { $not : 2 }
+            where = {
+                status : { [Op.not] : 2 }
             }
         }
     }else{
         if(req.user.otoritas !== 1){
-            where = { 
+            where = {
                 user_id : req.user.id,
             }
         }
     }
-    
+
 
 
     const PengajuanCuti = await models.PengajuanCuti.findAll({
         where : where,
+        order: [
+            ['id', 'DESC'],
+        ],
         include : 'user'
     })
 
@@ -129,7 +132,7 @@ const TambahDataPengajuan = async (req, res) => {
             data : 'error'
         })
     }
-    
+
     else{
         models.PengajuanCuti.create({
             user_id : req.user.id,
